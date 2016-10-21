@@ -100,10 +100,3 @@ sub gen_fish_complete_from_perinci_cmdline_script {
 # ABSTRACT:
 
 =head1 SYNOPSIS
-
-
-=head1 SEE ALSO
-
-This module is used by L<Getopt::Long::Complete>.
-
-L<Perinci::Sub::To::FishComplete>
