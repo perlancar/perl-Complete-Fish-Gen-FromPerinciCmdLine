@@ -19,11 +19,18 @@ $SPEC{gen_fish_complete_from_perinci_cmdline_script} = {
     v => 1.1,
     summary => 'Dump Perinci::CmdLine script '.
         'and generate fish completion from it',
+    description => <<'_',
+
+This routine generate `complete` fish command for each option, allowing fish to
+display the options in a different color.
+
+_
     args => {
         filename => {
             schema => 'filename*',
             req => 1,
             pos => 0,
+            cmdline_aliases => {f=>{}},
         },
         cmdname => {
             summary => 'Command name (by default will be extracted from filename)',
@@ -85,8 +92,31 @@ sub gen_fish_complete_from_perinci_cmdline_script {
                 "$gengls_res->[0] - $gengls_res->[1]"]
         unless $gengls_res->[0] == 200;
     my $glspec = $gengls_res->[2];
-
     $glspec->{'<>'} = sub{};
+
+    require Perinci::Sub::To::CLIDocData;
+    my $genclidocdata_res = Perinci::Sub::To::CLIDocData::gen_cli_doc_data_from_meta(
+        common_opts => $cli->{common_opts},
+        ggls_res => $gengls_res,
+        meta => $meta,
+        meta_is_normalized => 1,
+        per_arg_json => $cli->{per_arg_json},
+        per_arg_yaml => $cli->{per_arg_yaml},
+    );
+    return [500, "Can't generate CLI doc data: ".
+                "$genclidocdata_res->[0] - $genclidocdata_res->[1]"]
+        unless $genclidocdata_res->[0] == 200;
+    my $clidocdata = $genclidocdata_res->[2];
+
+    my $opt_desc = {};
+    for my $k (sort keys %{$clidocdata->{opts}}) {
+        my $v = $clidocdata->{opts}{$k};
+        next unless $v->{summary};
+        my @o = $k =~ /--?(\S+)/g;
+        for my $o (@o) {
+            $opt_desc->{$o} = $v->{summary};
+        }
+    }
 
     my $cmdname = $args{cmdname};
     if (!$cmdname) {
@@ -97,6 +127,7 @@ sub gen_fish_complete_from_perinci_cmdline_script {
     require Complete::Fish::Gen::FromGetoptLong;
     Complete::Fish::Gen::FromGetoptLong::gen_fish_complete_from_getopt_long_spec(
         spec => $glspec,
+        opt_desc => $opt_desc,
         cmdname => $cmdname,
         compname => $compname,
     );
