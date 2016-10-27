@@ -33,6 +33,10 @@ $SPEC{gen_fish_complete_from_perinci_cmdline_script} = {
             summary => 'Completer name (in case different from cmdname)',
             schema => 'str*',
         },
+        skip_detect => {
+            schema => ['bool', is=>1],
+            cmdline_aliases => {D=>{}},
+        },
     },
     result => {
         schema => 'str*',
@@ -45,7 +49,9 @@ sub gen_fish_complete_from_perinci_cmdline_script {
 
     require Perinci::CmdLine::Dump;
     my $dump_res = Perinci::CmdLine::Dump::dump_perinci_cmdline_script(
-        filename => $filename);
+        filename => $filename,
+        skip_detect => $args{skip_detect},
+    );
     return [500, "Can't dump script: $dump_res->[0] - $dump_res->[1]"]
         unless $dump_res->[0] == 200;
 
